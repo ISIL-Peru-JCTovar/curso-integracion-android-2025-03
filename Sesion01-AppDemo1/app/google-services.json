@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "320560407942",
-    "project_id": "isil-sesion01-appdemo1",
-    "storage_bucket": "isil-sesion01-appdemo1.firebasestorage.app"
+    "project_number": "22687815085",
+    "project_id": "isil-sesion01-appdemo1-l-1db02",
+    "storage_bucket": "isil-sesion01-appdemo1-l-1db02.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:320560407942:android:22bbfaade3927ff3483807",
+        "mobilesdk_app_id": "1:22687815085:android:6f54ca3d211d684186fd24",
         "android_client_info": {
           "package_name": "isil.edu.pe.integracion.sesion1.demo1"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyATz3ifEL0-sw4WsAyVP2t3EqQy0SijCdc"
+          "current_key": "AIzaSyD5hfAPo5_HCJX_A5Y6KCDc9ndox9si0dc"
         }
       ],
       "services": {
