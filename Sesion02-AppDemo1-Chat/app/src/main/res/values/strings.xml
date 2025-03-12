@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">ISIL-Sesion02-AppDemo1</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="activity_main_title1">Bienvenido</string>
+    <string name="activity_main_campo_nombre_hint">Ingresar el nombre</string>
+    <string name="activity_main_boton_1">Ir a la siguiente pantalla</string>
+    <string name="title_activity_second">SecondActivity</string>
+    <string name="activity_second_input_message">Ingresaste: %1$s</string>
+    <string name="title_activity_chat">ChatActivity</string>
+    <string name="act_chat_textbox_hint_1">Escribe tu mensaje</string>
+</resources>
