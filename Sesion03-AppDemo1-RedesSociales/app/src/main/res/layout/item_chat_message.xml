@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@android:color/darker_gray"
+    android:layout_margin="8dp">
+
+    <!-- Alias del usuario -->
+    <TextView
+        android:id="@+id/tvAlias"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="@android:color/black"
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"/>
+
+    <!-- Mensaje de texto -->
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:textColor="@android:color/black"
+        android:maxWidth="250dp"
+        android:background="@drawable/bg_other_message"
+        android:gravity="start"/>
+
+    <!-- Botón para reproducir audio -->
+    <ImageView
+        android:id="@+id/ivPlayAudio"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:visibility="gone"
+        android:src="@android:drawable/ic_media_play"
+        android:layout_gravity="center"/>
+
+</LinearLayout>
