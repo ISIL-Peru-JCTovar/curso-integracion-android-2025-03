@@ -4,6 +4,12 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import com.github.scribejava.apis.TwitterApi
+import com.github.scribejava.core.builder.ServiceBuilder
+import com.github.scribejava.core.model.OAuthRequest
+import com.github.scribejava.core.model.Response
+import com.github.scribejava.core.model.Verb
+import com.github.scribejava.core.oauth.OAuth10aService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,6 +39,35 @@ class XActivity : AppCompatActivity() {
         }
     }
 
+    fun postToTwitter(text: String) {
+        val API_KEY = "RYtrkJUgWGRBfNLj43zFVkeeV"
+        val API_SECRET = "W9CU8RzIGZQ1wDjVTgcV66TY9ei3Ooiu09aTx04oqhS3UnczaB"
+        val ACCESS_TOKEN = "1900423461077737472-R7ybZFArGtGdndBJfDDAwC8mhbpdgt"
+        val ACCESS_SECRET = "8iEd3qNmhDLstaJGCKfGTmKyQz3P8bl8A6kb8P8hhWEaA"
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                //-- Obteniendo el API de X mediante OAuth 1.0
+                val service: OAuth10aService = ServiceBuilder(API_KEY)
+                                                        .apiSecret(API_SECRET)
+                                                        .build(TwitterApi.instance())
+                //-- Obteniendo el Request
+                val request = OAuthRequest(Verb.POST, "https://api.twitter.com/2/tweets")
+                request.addHeader("Content-Type", "application/json")
+                request.setPayload("""{"text": "$text"}""")
+                service.signRequest(
+                    com.github.scribejava.core.model.OAuth1AccessToken(ACCESS_TOKEN, ACCESS_SECRET),
+                    request
+                )
+                //-- Obteniendo el Response
+                val response: Response = service.execute(request)
+                println(response.body)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /*
     private fun postToTwitter(text: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -56,6 +91,7 @@ class XActivity : AppCompatActivity() {
             }
         }
     }
+    */
 
     /*
     private fun postToTwitter(text: String) {
@@ -85,9 +121,9 @@ class XActivity : AppCompatActivity() {
     private fun getTwitterInstanceV2(): TwitterV2 {
         val twitter = TwitterFactory.getSingleton().apply {
             setOAuthConsumer("RYtrkJUgWGRBfNLj43zFVkeeV",
-                           "W9CU8RzIGZQ1wDjVTgcV66TY9ei3Ooiu09aTx04oqhS3UnczaB")
+                             "W9CU8RzIGZQ1wDjVTgcV66TY9ei3Ooiu09aTx04oqhS3UnczaB")
             oAuthAccessToken = AccessToken("1900423461077737472-R7ybZFArGtGdndBJfDDAwC8mhbpdgt",
-                                       "8iEd3qNmhDLstaJGCKfGTmKyQz3P8bl8A6kb8P8hhWEaA")
+                                           "8iEd3qNmhDLstaJGCKfGTmKyQz3P8bl8A6kb8P8hhWEaA")
         }
         //Bearer: AAAAAAAAAAAAAAAAAAAAAC21zwEAAAAAn7rvnDRGQie9onF9DqE44DJ1cak%3Dyj8BI7Vq1703UP1QDeANfSBkoxFL0NFXNUBZqd3cdYdUMAHc8y
         val twitterV2 = TwitterV2Impl(twitter)
