@@ -1,0 +1,603 @@
+1. Agregar un toolbar (en res/layout/toolbar.xml):
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.Toolbar
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/toolbar"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="?attr/colorPrimary"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+    android:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+2. Agregar el Toolbar en los Layouts XML existentes (de los Activities):
+
+    <include layout="@layout/toolbar"/>
+
+3. activity_main.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <include layout="@layout/toolbar"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/txtTitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/activity_main_title1"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/edtNombres"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/activity_main_campo_nombre_hint" />
+
+        <Button
+            android:id="@+id/btnIr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/activity_main_boton_1" />
+
+    </LinearLayout>
+
+</LinearLayout>
+
+4. activity_chat.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <include layout="@layout/toolbar"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Lista de mensajes -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvChat"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="vertical"/>
+
+        <!-- Controles para enviar mensajes -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Campo de texto -->
+            <EditText
+                android:id="@+id/etMessage"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:hint="@string/act_chat_textbox_hint_1"
+                android:background="@android:drawable/editbox_background"
+                android:textColor="@android:color/black"
+                android:textColorHint="@android:color/darker_gray"
+                android:padding="8dp"/>
+
+            <!-- Botón enviar mensaje -->
+            <Button
+                android:id="@+id/btnSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enviar"/>
+        </LinearLayout>
+
+        <!-- Botones de adjuntar archivos y grabar audio -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+            <Button
+                android:id="@+id/btnRecord"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎙 Grabar"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
+
+5. Agregar una nueva carpeta de Android llamada menu, dentro de res, y luego dentro de esta carpeta crear el menu_main.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menu_auth"
+        android:title="@string/menu_autenticacion"
+        android:icon="@android:drawable/ic_menu_manage"
+        app:showAsAction="always" />
+
+</menu>
+
+6. Dentro de la clase MainActivity.kt, agregar las siguientes lineas en onCreate:
+
+        // Agregando el toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+   Tener cuidado de exportar el import import androidx.appcompat.widget.Toolbar
+
+7. Dentro de la clase MainActivity.kt, agregar los dos eventos de creacion:
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_auth -> {
+                startActivity(Intent(this, AuthActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+8. El MainActivity.kt quedaria de la siguiente forma:
+
+package isil.edu.pe.integracion.sesion1.demo1
+
+import android.os.Bundle
+import android.widget.*
+import android.content.Intent
+import android.view.Menu
+import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import com.google.firebase.analytics.FirebaseAnalytics
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Invocando el metodo padre
+        super.onCreate(savedInstanceState)
+        // Seteando el layout main
+        setContentView(R.layout.activity_main)
+        // Agregando el toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        // Inicializar Firebase Analytics
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
+        // Definiendo un listener para el boton
+        val editText = findViewById<EditText>(R.id.edtNombres)
+        val button = findViewById<Button>(R.id.btnIr)
+        button.setOnClickListener {
+            //-- Enviando el texto hacia un Bundle (que se compartira para la Analitica)
+            val usuario = editText.text.toString()
+            val bundle = Bundle().apply {
+                putString("user_input", usuario)
+            }
+            //-- Enviar el evento a Firebase Analytics
+            firebaseAnalytics.logEvent("button_clicked", bundle)
+            //-- Definir alias del usuario - Firebase Analytics
+            //firebaseAnalytics.setUserId(usuario)
+            firebaseAnalytics.setUserProperty("userId", usuario)
+            //-- Definir el usuario en Firestore
+            //-- Ir a la segunda pantalla - Chat
+            val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra("user_text", usuario)
+            startActivity(intent)
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_auth -> {
+                startActivity(Intent(this, AuthActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+}
+
+9. Asi quedaria el ChatActivity.kt:
+
+package isil.edu.pe.integracion.sesion1.demo1
+
+import android.app.Activity
+import android.content.Intent
+import android.media.MediaRecorder
+import android.net.Uri
+import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.auth.FirebaseAuth
+//import com.github.dhaval2404.imagepicker.ImagePicker
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+
+import java.io.File
+import java.io.IOException
+
+import isil.edu.pe.integracion.sesion1.demo1.adapters.ChatAdapter
+
+class ChatActivity : AppCompatActivity() {
+
+    private lateinit var db: FirebaseFirestore
+    private lateinit var storage: FirebaseStorage
+    private lateinit var chatAdapter: ChatAdapter
+    private lateinit var recorder: MediaRecorder
+    private var audioFile: File? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Invocando el metodo padre
+        super.onCreate(savedInstanceState)
+        // Seteando el layout del chat
+        setContentView(R.layout.activity_chat)
+        // Agregando el toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        // Obtener la instancia Firebase como repositorio de Streaming
+        db = FirebaseFirestore.getInstance()
+        storage = FirebaseStorage.getInstance()
+        // Definiendo los controles
+        val rvChat = findViewById<RecyclerView>(R.id.rvChat)
+        val etMessage = findViewById<EditText>(R.id.etMessage)
+        val btnSend = findViewById<Button>(R.id.btnSend)
+        val btnRecord = findViewById<Button>(R.id.btnRecord)
+        // Obtener el chat adapter
+        val currentUserId = intent.getStringExtra("user_text")
+        chatAdapter = ChatAdapter(currentUserId)
+        rvChat.layoutManager = LinearLayoutManager(this)
+        rvChat.adapter = chatAdapter
+        // Programando el boton de envio
+        btnSend.setOnClickListener {
+            val message = etMessage.text.toString().trim()
+            if (message.isNotEmpty()) {
+                sendMessage(message)
+                etMessage.text.clear()
+            }
+        }
+        // Programando el boton de guardar
+        btnRecord.setOnClickListener {
+            startRecording()
+        }
+        // Colocar un listener de la BD de Firestore
+        db.collection("messages")
+            .orderBy("timestamp")
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    return@addSnapshotListener
+                }
+                if (snapshots != null) {
+                    chatAdapter.setMessages(snapshots.documents)
+                }
+            }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_auth -> {
+                startActivity(Intent(this, AuthActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun sendMessage(message: String) {
+        /*
+        val chatMessage = hashMapOf("text" to message,
+                                    "userId" to FirebaseAuth.getInstance().currentUser?.uid,
+                                    "timestamp" to System.currentTimeMillis())
+        */
+        val chatMessage = hashMapOf("text" to message,
+                                    "userId" to intent.getStringExtra("user_text"),
+                                    "timestamp" to System.currentTimeMillis())
+        db.collection("messages").add(chatMessage)
+          .addOnSuccessListener { Toast.makeText(this, "Mensaje enviado", Toast.LENGTH_SHORT).show() }
+          .addOnFailureListener { Toast.makeText(this, "Error al enviar", Toast.LENGTH_SHORT).show() }
+    }
+
+    private fun startRecording() {
+        try {
+            audioFile = File.createTempFile("audio", ".3gp", cacheDir)
+            recorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                setOutputFile(audioFile!!.absolutePath)
+                prepare()
+                start()
+            }
+            Toast.makeText(this, "Grabando...", Toast.LENGTH_SHORT).show()
+        } catch (e: IOException) {
+            Toast.makeText(this, "Error al grabar", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            val fileUri: Uri? = data.data
+            uploadFile(fileUri)
+        }
+    }
+
+    private fun uploadFile(fileUri: Uri?) {
+        if (fileUri != null) {
+            val ref = storage.reference.child("uploads/${System.currentTimeMillis()}")
+            ref.putFile(fileUri)
+                .addOnSuccessListener { Toast.makeText(this, "Archivo enviado", Toast.LENGTH_SHORT).show() }
+                .addOnFailureListener { Toast.makeText(this, "Error al subir archivo", Toast.LENGTH_SHORT).show() }
+        }
+    }
+
+}
+
+10. Agregar un nuevo archivo llamado activity_auth.xml dentro de res/layouts:
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Autenticación con Google"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:paddingBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnSignIn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Iniciar sesión con Google"
+        android:backgroundTint="@android:color/holo_blue_light"/>
+
+</LinearLayout>
+
+11. Dentro del AndroidManifest.xml, agregar:
+
+        <activity
+            android:name=".AuthActivity"
+            android:exported="false"
+            android:label="AuthActivity" />
+
+    Quedaria asi:
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ISILSesion02AppDemo1"
+        tools:targetApi="31">
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false"
+            android:label="@string/title_activity_chat" />
+        <activity
+            android:name=".AuthActivity"
+            android:exported="false"
+            android:label="AuthActivity" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/title_activity_main">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+
+12. Modificar el build.gradle.kts (a nivel app), agregar la implementacion de:
+
+implementation("com.google.android.gms:play-services-auth:21.3.0")
+
+Quedaria asi:
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "isil.edu.pe.integracion.sesion1.demo1"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "isil.edu.pe.integracion.sesion1.demo1"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        compose = true
+    }
+}
+
+apply(plugin="com.android.application")
+apply(plugin="com.google.gms.google-services")
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.firebase.analytics)
+    implementation("com.google.firebase:firebase-analytics:22.3.0")
+    implementation("com.google.firebase:firebase-analytics-ktx:22.3.0")
+    implementation("com.google.firebase:firebase-auth:22.3.0")
+    implementation("com.google.firebase:firebase-auth-ktx:22.3.0")
+    implementation("com.google.firebase:firebase-firestore:25.1.2")
+    implementation("com.google.firebase:firebase-firestore-ktx:25.1.2")
+    implementation("com.google.firebase:firebase-storage:21.0.1")
+    implementation("com.google.firebase:firebase-storage-ktx:21.0.1")
+    implementation(libs.androidx.recyclerview.v121)
+    //implementation("com.github.dhaval2404:imagepicker:2.1")
+    implementation("androidx.activity:activity-ktx:1.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+13. Agregar el GoogleAuthActivity:
+
+package isil.edu.pe.integracion.sesion1.demo1
+
+import android.content.Intent
+import android.os.Bundle
+import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+
+class GoogleAuthActivity : AppCompatActivity() {
+
+    private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_auth)
+
+        auth = FirebaseAuth.getInstance()
+
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        findViewById<Button>(R.id.btnSignIn).setOnClickListener {
+            signInWithGoogle()
+        }
+    }
+
+    private fun signInWithGoogle() {
+        val signInIntent = googleSignInClient.signInIntent
+        startActivityForResult(signInIntent, 1001)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 1001) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            val account = task.getResult(ApiException::class.java)
+            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+
+            auth.signInWithCredential(credential)
+                .addOnCompleteListener(this) { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(this, "Autenticado", Toast.LENGTH_SHORT).show()
+                        finish()
+                    } else {
+                        Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        }
+    }
+
+}
+
