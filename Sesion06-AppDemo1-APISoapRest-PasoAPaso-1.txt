@@ -1,0 +1,512 @@
+1. Agregar un campo nuevo en la pantalla de inicio, para seleccionar el pais.
+
+- Modificar el archivo activity_main.xml (pantalla principal) y agregar el componente AutoComplete:
+
+        <AutoCompleteTextView
+            android:id="@+id/countryDropdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Selecciona un país" />
+
+- Esto quedaria asi:
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <include layout="@layout/toolbar"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/txtTitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/activity_main_title1"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/edtNombres"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/activity_main_campo_nombre_hint" />
+
+        <AutoCompleteTextView
+            android:id="@+id/countryDropdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Selecciona un país" />
+
+        <Button
+            android:id="@+id/btnIr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/activity_main_boton_1" />
+
+    </LinearLayout>
+
+</LinearLayout>
+
+2. Modificar el archivo build.gradle.kts (/app), agregando librerias necesarias para APIs, antes de la linea testImplementation(libs.junit):
+
+    //API REST
+    implementation("com.google.code.gson:gson:2.10.1")
+
+3. En el MainActivity, agregar esto al final del onCreate():
+
+        //Agregar una funcion para cargar la lista de paises (usando API SOAP)
+        cargarListaPaises()
+
+    Y luego al final de la clase, agregar la funcion y ademas otra funcion de parseo (traduccion) de XML:
+
+    private fun cargarListaPaises() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val client = OkHttpClient()
+                val soapRequestBody = """
+                    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                        <soapenv:Body>
+                            <ListOfCountryNamesByName xmlns="http://www.oorsprong.org/websamples.countryinfo"></ListOfCountryNamesByName>
+                        </soapenv:Body>
+                    </soapenv:Envelope>
+                """.trimIndent()
+                val request = Request.Builder()
+                    .url("https://soap-service-free.mock.beeceptor.com/CountryInfoService.wso")
+                    .post(RequestBody.create("text/xml".toMediaTypeOrNull(), soapRequestBody))
+                    .addHeader("Content-Type", "text/xml; charset=utf-8")
+                    .build()
+                val response = client.newCall(request).execute()
+                val xmlData = response.body?.string()
+                val countryList = parseXML(xmlData)
+                withContext(Dispatchers.Main) {
+                    val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, countryList)
+                    countryDropdown.setAdapter(adapter)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun parseXML(xml: String?): List<String> {
+        val countryList = mutableListOf<String>()
+        var currentISO = ""
+        var currentName = ""
+        val factory = XmlPullParserFactory.newInstance()
+        val parser = factory.newPullParser()
+        parser.setInput(xml?.reader())
+        var eventType = parser.eventType
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            when (eventType) {
+                XmlPullParser.START_TAG -> {
+                    when (parser.name) {
+                        "m:sISOCode" -> currentISO = parser.nextText()
+                        "m:sName" -> currentName = parser.nextText()
+                    }
+                }
+                XmlPullParser.END_TAG -> {
+                    if (parser.name == "m:tCountryCodeAndName") {
+                        //countryList.add(Country(currentISO, currentName))
+                        countryList.add(currentName)
+                    }
+                }
+            }
+            eventType = parser.next()
+        }
+        return countryList
+    }
+
+     - Agregar la siguiente linea arriba del metodo onCreate():
+
+      private lateinit var countryDropdown: AutoCompleteTextView
+
+
+      - Agregar ademas, esta linea dentro del onCreate():
+
+      countryDropdown = findViewById<AutoCompleteTextView>(R.id.countryDropdown)
+
+      - Quedaria asi:
+
+package isil.edu.pe.integracion.sesion1.demo1
+
+import android.os.Bundle
+import android.widget.*
+import android.content.Intent
+import android.view.Menu
+import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import com.google.firebase.analytics.FirebaseAnalytics
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserFactory
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+
+    private lateinit var countryDropdown: AutoCompleteTextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Invocando el metodo padre
+        super.onCreate(savedInstanceState)
+        // Seteando el layout main
+        setContentView(R.layout.activity_main)
+        // Agregando el toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        // Inicializar Firebase Analytics
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
+        // Definiendo un listener para el boton
+        val editText = findViewById<EditText>(R.id.edtNombres)
+        val button = findViewById<Button>(R.id.btnIr)
+        countryDropdown = findViewById<AutoCompleteTextView>(R.id.countryDropdown)
+        button.setOnClickListener {
+            //-- Enviando el texto hacia un Bundle (que se compartira para la Analitica)
+            val usuario = editText.text.toString()
+            val bundle = Bundle().apply {
+                putString("user_input", usuario)
+            }
+            //-- Enviar el evento a Firebase Analytics
+            firebaseAnalytics.logEvent("button_clicked", bundle)
+            //-- Definir alias del usuario - Firebase Analytics
+            //firebaseAnalytics.setUserId(usuario)
+            firebaseAnalytics.setUserProperty("userId", usuario)
+            //-- Definir el usuario en Firestore
+            //-- Ir a la segunda pantalla - Chat
+            val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra("user_text", usuario)
+            startActivity(intent)
+        }
+        //Agregar una funcion para cargar la lista de paises (usando API SOAP)
+        cargarListaPaises()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_auth -> {
+                startActivity(Intent(this, GoogleAuthActivity::class.java))
+                true
+            }
+            R.id.menu_x -> {
+                startActivity(Intent(this, XActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun cargarListaPaises() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val client = OkHttpClient()
+                val soapRequestBody = """
+                    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                        <soapenv:Body>
+                            <ListOfCountryNamesByName xmlns="http://www.oorsprong.org/websamples.countryinfo"></ListOfCountryNamesByName>
+                        </soapenv:Body>
+                    </soapenv:Envelope>
+                """.trimIndent()
+                val request = Request.Builder()
+                    .url("https://soap-service-free.mock.beeceptor.com/CountryInfoService.wso")
+                    .post(RequestBody.create("text/xml".toMediaTypeOrNull(), soapRequestBody))
+                    .addHeader("Content-Type", "text/xml; charset=utf-8")
+                    .build()
+                val response = client.newCall(request).execute()
+                val xmlData = response.body?.string()
+                val countryList = parseXML(xmlData)
+                withContext(Dispatchers.Main) {
+                    val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, countryList)
+                    countryDropdown.setAdapter(adapter)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun parseXML(xml: String?): List<String> {
+        val countryList = mutableListOf<String>()
+        var currentISO = ""
+        var currentName = ""
+        val factory = XmlPullParserFactory.newInstance()
+        val parser = factory.newPullParser()
+        parser.setInput(xml?.reader())
+        var eventType = parser.eventType
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            when (eventType) {
+                XmlPullParser.START_TAG -> {
+                    when (parser.name) {
+                        "m:sISOCode" -> currentISO = parser.nextText()
+                        "m:sName" -> currentName = parser.nextText()
+                    }
+                }
+                XmlPullParser.END_TAG -> {
+                    if (parser.name == "m:tCountryCodeAndName") {
+                        //countryList.add(Country(currentISO, currentName))
+                        countryList.add(currentName)
+                    }
+                }
+            }
+            eventType = parser.next()
+        }
+        return countryList
+    }
+
+}
+
+   
+4. Crear nueva pantalla llamada activity_customers.xml dentro de res/layout:
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/purple_500"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp"/>
+
+</LinearLayout>
+
+5. Crear nueva pantalla llamada item_customer.xml dentro de res/layout:
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@android:color/white"
+    android:elevation="2dp"
+    android:layout_margin="4dp">
+
+    <TextView
+        android:id="@+id/tvUserName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"/>
+
+    <TextView
+        android:id="@+id/tvUserEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"/>
+
+</LinearLayout>
+
+6. Agregar la clase CustomerActivity.kt:
+
+package isil.edu.pe.integracion.sesion1.demo1
+
+import android.content.Intent
+import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import kotlin.concurrent.thread
+
+import isil.edu.pe.integracion.sesion1.demo1.adapters.CustomerAdapter
+import isil.edu.pe.integracion.sesion1.demo1.entidades.Cliente
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody
+
+class CustomerActivity : AppCompatActivity() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var userAdapter: CustomerAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Invocando el metodo padre
+        super.onCreate(savedInstanceState)
+        // Seteando el layout de clientes
+        setContentView(R.layout.activity_customers)
+        // Definiendo el Toolbar
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // Definiendo el RecyclerView (que es el componente tipo lista de elementos)
+        recyclerView = findViewById(R.id.recyclerView)
+        //recyclerView.layoutManager = GridLayoutManager(this, 2)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        userAdapter = CustomerAdapter(emptyList())
+        recyclerView.adapter = userAdapter
+        // Llenar el RecyclerView desde API REST
+        fetchCustomers()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_auth -> {
+                startActivity(Intent(this, GoogleAuthActivity::class.java))
+                true
+            }
+            R.id.menu_x -> {
+                startActivity(Intent(this, XActivity::class.java))
+                true
+            }
+            R.id.menu_list_customers_1 -> {
+                startActivity(Intent(this, CustomerActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun fetchCustomers() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val client = OkHttpClient()
+                val request = Request.Builder()
+                    .url("https://jsonplaceholder.typicode.com/users")
+                    .method("GET", RequestBody.create("text/json".toMediaTypeOrNull(), ""))
+                    .build()
+                val response = client.newCall(request).execute()
+                val jsonData = response.body?.string()
+                val userType = object : TypeToken<List<Cliente>>() {}.type
+                val users: List<Cliente> = Gson().fromJson(jsonData, userType)
+                runOnUiThread {
+                    userAdapter.updateData(users)
+                }
+            } catch (e: Exception) {
+                Log.e("UsersActivity", "Error fetching users", e)
+            }
+        }
+    }
+
+}
+
+7. Agregar la clase CustomerAdapter (dentro del subpaquete /adapters):
+
+package isil.edu.pe.integracion.sesion1.demo1.adapters
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+
+import isil.edu.pe.integracion.sesion1.demo1.R
+
+class CustomerAdapter(private var userList: List<Cliente>) : RecyclerView.Adapter<CustomerAdapter.UserViewHolder>() {
+
+    class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tvUserName: TextView = itemView.findViewById(R.id.tvUserName)
+        val tvUserEmail: TextView = itemView.findViewById(R.id.tvUserEmail)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_customer, parent, false)
+        return UserViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
+        val user = userList[position]
+        holder.tvUserName.text = user.name
+        holder.tvUserEmail.text = user.email
+    }
+
+    override fun getItemCount(): Int = userList.size
+
+    fun updateData(newUsers: List<Cliente>) {
+        userList = newUsers
+        notifyDataSetChanged()
+    }
+
+}
+
+8. Agregar la clase data Cliente, dentro del paquete .entidades (previamente creado):
+
+package isil.edu.pe.integracion.sesion1.demo1.entidades
+
+data class Cliente (
+
+    val id: Int,
+    val name: String,
+    val email: String
+
+)
+
+9. Modificar el menu en res/menu/menu_main.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menu_auth"
+        android:title="@string/menu_autenticacion"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:tooltipText="Auntenticarse en Google"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/menu_x"
+        android:title="Publicar en X"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:tooltipText="Publicar en X"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/menu_list_customers_1"
+        android:title="Obtener Clientes (API REST)"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:tooltipText="Obtener Clientes (API REST)"
+        app:showAsAction="always" />
+
+</menu>
+
+10. Agregar el siguiente elemento (Activity) en el AndroidManifest.xml:
+
+        <activity
+            android:name=".CustomerActivity"
+            android:exported="false"
+            android:label="CustomerActivity" />
+
